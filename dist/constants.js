@@ -29,16 +29,22 @@ export const GONG_SYNTH_CONFIG = {
     baseFrequency: 80,
     // Frequency multipliers for harmonics (creates rich, metallic timbre)
     // First value is the fundamental, others are overtones
-    // Many inharmonic partials for very full, complex, metallic sound
+    // Wide spectrum with many inharmonic partials for very broad, full sound
     frequencies: [
-        1.0, // Fundamental
-        1.5, 2.0, 2.4, 2.9, 3.5, // Lower partials (body)
-        4.2, 5.0, 6.0, 7.2, 8.5, // Mid partials (warmth)
-        10.2, 12.5, 15.0 // Upper partials (brightness & shimmer)
+        // Fundamental and sub-harmonics
+        1.0, 1.2, 1.4, 1.6, 1.8,
+        // Lower partials (body and depth)
+        2.1, 2.4, 2.7, 3.0, 3.4, 3.8,
+        // Mid partials (warmth and presence)
+        4.3, 4.9, 5.5, 6.2, 7.0, 7.9,
+        // Upper-mid partials (brightness)
+        8.9, 10.1, 11.4, 12.9, 14.6,
+        // High partials (shimmer and air)
+        16.5, 18.7, 21.2, 24.0, 27.3
     ],
     // How much the pitch drops during the gong (1.0 = no drop, 0.9 = drops to 90% of starting pitch)
     frequencyDecay: 0.98,
     // Metallic shimmer noise settings
-    noiseVolume: 0.18, // Volume of the metallic noise (0-1)
-    noiseFilterFrequency: 1400 // High-pass filter cutoff in Hz (higher = brighter)
+    noiseVolume: 0.2, // Volume of the metallic noise (0-1)
+    noiseFilterFrequency: 1200 // High-pass filter cutoff in Hz (higher = brighter)
 };

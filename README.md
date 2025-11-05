@@ -1,6 +1,6 @@
 # Interval Gong
 
-**Live Demo:** https://yourusername.github.io/interval-gong/ _(replace with your actual username)_
+**Live Demo:** https://sullivan-.github.io/interval-gong/
 
 A simple TypeScript webapp that plays a gong sound at specified intervals. Perfect for meditation, work intervals, or any timed activities.
 
