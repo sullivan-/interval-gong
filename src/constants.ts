@@ -1,4 +1,9 @@
 // ============================================
+// TESTING MODE - Set to false for production
+// ============================================
+export const TESTING_MODE = false;  // Auto-starts gong on page load when true
+
+// ============================================
 // GONG CONFIGURATION CONSTANTS
 // Edit these values to customize gong behavior
 // ============================================
@@ -20,5 +25,29 @@ export const GONG_DURATION_RULES = [
 export const MIN_GONG_DURATION = 0.5;
 export const MAX_GONG_DURATION = 3.0;
 
-// Audio file path
-export const GONG_AUDIO_FILE = "gong.mp3";
+// ============================================
+// AUDIO SYNTHESIS CONFIGURATION
+// Edit these to change the gong sound characteristics
+// ============================================
+
+export const GONG_SYNTH_CONFIG = {
+    // Base frequency in Hz (lower = deeper gong)
+    baseFrequency: 80,
+
+    // Frequency multipliers for harmonics (creates rich, metallic timbre)
+    // First value is the fundamental, others are overtones
+    // Many inharmonic partials for very full, complex, metallic sound
+    frequencies: [
+        1.0,   // Fundamental
+        1.5, 2.0, 2.4, 2.9, 3.5,  // Lower partials (body)
+        4.2, 5.0, 6.0, 7.2, 8.5,  // Mid partials (warmth)
+        10.2, 12.5, 15.0          // Upper partials (brightness & shimmer)
+    ],
+
+    // How much the pitch drops during the gong (1.0 = no drop, 0.9 = drops to 90% of starting pitch)
+    frequencyDecay: 0.98,
+
+    // Metallic shimmer noise settings
+    noiseVolume: 0.18,          // Volume of the metallic noise (0-1)
+    noiseFilterFrequency: 1400  // High-pass filter cutoff in Hz (higher = brighter)
+};

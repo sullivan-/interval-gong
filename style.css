@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -15,17 +15,18 @@ body {
 }
 
 .container {
-    background: white;
+    background: #242438;
     border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     padding: 40px;
     max-width: 400px;
     width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 h1 {
     text-align: center;
-    color: #333;
+    color: #e8e8f0;
     margin-bottom: 30px;
     font-size: 32px;
 }
@@ -44,7 +45,7 @@ h1 {
 
 .input-group label {
     font-size: 14px;
-    color: #666;
+    color: #a8a8b8;
     margin-bottom: 8px;
     font-weight: 500;
 }
@@ -52,21 +53,25 @@ h1 {
 .input-group input {
     padding: 12px;
     font-size: 24px;
-    border: 2px solid #e0e0e0;
+    border: 2px solid #3a3a50;
     border-radius: 10px;
     text-align: center;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s, background-color 0.3s;
+    background-color: #1f1f30;
+    color: #e8e8f0;
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #6b7fd7;
+    background-color: #2a2a40;
 }
 
 .input-group input:disabled {
-    background-color: #f5f5f5;
-    color: #999;
+    background-color: #1a1a28;
+    color: #606070;
     cursor: not-allowed;
+    border-color: #2a2a38;
 }
 
 .button-section {
@@ -94,13 +99,14 @@ h1 {
 }
 
 .btn-start {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #4a5583 0%, #5a4a70 100%);
+    color: #e8e8f0;
 }
 
 .btn-start:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 20px rgba(74, 85, 131, 0.5);
+    background: linear-gradient(135deg, #556094 0%, #6a5880 100%);
 }
 
 .btn-start:active:not(:disabled) {
@@ -108,13 +114,14 @@ h1 {
 }
 
 .btn-stop {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
+    background: linear-gradient(135deg, #705060 0%, #704055 100%);
+    color: #e8e8f0;
 }
 
 .btn-stop:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+    box-shadow: 0 5px 20px rgba(112, 80, 96, 0.5);
+    background: linear-gradient(135deg, #806070 0%, #804565 100%);
 }
 
 .btn-stop:active:not(:disabled) {
@@ -124,20 +131,21 @@ h1 {
 .status-section {
     text-align: center;
     padding: 20px;
-    background: #f8f9fa;
+    background: #1f1f30;
     border-radius: 10px;
+    border: 1px solid #3a3a50;
 }
 
 #statusText {
     font-size: 18px;
     font-weight: 600;
-    color: #667eea;
+    color: #8b93d7;
     margin-bottom: 10px;
 }
 
 #nextGongText {
     font-size: 16px;
-    color: #666;
+    color: #a8a8b8;
     min-height: 24px;
 }
 

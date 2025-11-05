@@ -4,8 +4,9 @@ import {
     GONG_DURATION_RULES,
     MIN_GONG_DURATION,
     MAX_GONG_DURATION,
-    GONG_AUDIO_FILE
+    TESTING_MODE
 } from './constants.js';
+import { GongSynthesizer } from './audioSynthesizer.js';
 
 class IntervalGong {
     private minutesInput: HTMLInputElement;
@@ -15,7 +16,7 @@ class IntervalGong {
     private statusText: HTMLElement;
     private nextGongText: HTMLElement;
 
-    private audio: HTMLAudioElement;
+    private synthesizer: GongSynthesizer;
     private intervalId: number | null = null;
     private isRunning: boolean = false;
     private intervalSeconds: number = 0;
@@ -31,8 +32,8 @@ class IntervalGong {
         this.statusText = document.getElementById('statusText') as HTMLElement;
         this.nextGongText = document.getElementById('nextGongText') as HTMLElement;
 
-        // Create audio element
-        this.audio = new Audio(GONG_AUDIO_FILE);
+        // Create audio synthesizer
+        this.synthesizer = new GongSynthesizer();
 
         // Set up event listeners
         this.startButton.addEventListener('click', () => this.start());
@@ -73,16 +74,7 @@ class IntervalGong {
 
     private playGong(): void {
         const gongDuration = this.getGongDuration(this.intervalSeconds);
-
-        // Reset and play audio
-        this.audio.currentTime = 0;
-        this.audio.play();
-
-        // Stop audio after specified duration
-        setTimeout(() => {
-            this.audio.pause();
-            this.audio.currentTime = 0;
-        }, gongDuration * 1000);
+        this.synthesizer.playGong(gongDuration);
     }
 
     private updateCountdown(): void {
@@ -100,7 +92,7 @@ class IntervalGong {
         }
     }
 
-    private start(): void {
+    public start(): void {
         this.validateInputs();
 
         const minutes = parseInt(this.minutesInput.value) || 0;
@@ -157,9 +149,8 @@ class IntervalGong {
             this.countdownIntervalId = null;
         }
 
-        // Stop audio if playing
-        this.audio.pause();
-        this.audio.currentTime = 0;
+        // Note: Web Audio API sounds will naturally fade out based on their envelope
+        // No need to explicitly stop them
 
         // Unlock inputs
         this.minutesInput.disabled = false;
@@ -177,5 +168,13 @@ class IntervalGong {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new IntervalGong();
+    const app = new IntervalGong();
+
+    // Auto-start in testing mode
+    if (TESTING_MODE) {
+        // Small delay to ensure everything is initialized
+        setTimeout(() => {
+            app.start();
+        }, 100);
+    }
 });

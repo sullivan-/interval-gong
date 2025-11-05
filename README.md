@@ -1,14 +1,17 @@
 # Interval Gong
 
+**Live Demo:** https://yourusername.github.io/interval-gong/ _(replace with your actual username)_
+
 A simple TypeScript webapp that plays a gong sound at specified intervals. Perfect for meditation, work intervals, or any timed activities.
 
 ## Features
 
 - Set custom intervals from 1 second to 1 hour
-- Automatic gong sound at each interval
+- Automatic gong sound at each interval (synthesized using Web Audio API)
 - Variable gong duration based on interval length
 - Clean, simple interface
 - Easy-to-modify constants for customization
+- No external audio files needed
 
 ## Setup
 
@@ -18,20 +21,7 @@ A simple TypeScript webapp that plays a gong sound at specified intervals. Perfe
 npm install
 ```
 
-### 2. Add Gong Sound File
-
-You need to add a gong sound file named `gong.mp3` to the root directory. You can:
-
-- Download a free gong sound from [Freesound.org](https://freesound.org/) (search for "gong")
-- Use any gong sound file you prefer
-- Make sure the file is at least 3 seconds long (since the app may play up to 3 seconds)
-- Name it `gong.mp3` and place it in the root directory
-
-**Recommended sources:**
-- https://freesound.org/search/?q=gong&f=license:%22Creative+Commons+0%22
-- Make sure to use sounds with appropriate licenses for your use case
-
-### 3. Build the TypeScript
+### 2. Build the TypeScript
 
 ```bash
 npm run build
@@ -39,15 +29,22 @@ npm run build
 
 This will compile the TypeScript files in `src/` to JavaScript in `dist/`.
 
-### 4. Serve Locally (optional)
+### 3. Run Locally
 
-Open `index.html` in your browser, or use a local server:
+**IMPORTANT:** You must use a local web server. Opening `index.html` directly will fail due to CORS restrictions on ES modules.
 
 ```bash
-python -m http.server 8000
-# or
+# Option 1: Python (recommended)
+python3 -m http.server 8000
+
+# Option 2: npx serve
 npx serve
+
+# Option 3: npx http-server
+npx http-server
 ```
+
+Then open `http://localhost:8000` in your browser.
 
 ## GitHub Pages Deployment
 
@@ -60,16 +57,21 @@ This site is configured to be hosted on GitHub Pages from the main branch:
 5. Save and wait a few minutes for deployment
 6. Your site will be available at `https://yourusername.github.io/interval-gong/`
 
-**Important:** Make sure `gong.mp3` is committed to the repository!
-
 ## Customization
 
-All timing constants can be easily modified in `src/constants.ts`:
+All timing and audio constants can be easily modified in `src/constants.ts`:
 
+**Interval timing:**
 - `MIN_INTERVAL_SECONDS` / `MAX_INTERVAL_SECONDS`: Allowed interval range
 - `GONG_DURATION_RULES`: Array defining gong duration based on interval length
 - `MIN_GONG_DURATION` / `MAX_GONG_DURATION`: Safety bounds for gong duration
-- `GONG_AUDIO_FILE`: Path to the audio file
+
+**Audio synthesis (to change the gong sound):**
+- `GONG_SYNTH_CONFIG.baseFrequency`: Base pitch in Hz (lower = deeper gong)
+- `GONG_SYNTH_CONFIG.frequencies`: Harmonic multipliers for timbre
+- `GONG_SYNTH_CONFIG.frequencyDecay`: How much pitch drops during the gong
+- `GONG_SYNTH_CONFIG.noiseVolume`: Amount of metallic shimmer
+- `GONG_SYNTH_CONFIG.noiseFilterFrequency`: Brightness of the shimmer
 
 After modifying constants, run `npm run build` to recompile.
 

@@ -1,4 +1,5 @@
-import { MIN_INTERVAL_SECONDS, MAX_INTERVAL_SECONDS, GONG_DURATION_RULES, MIN_GONG_DURATION, MAX_GONG_DURATION, GONG_AUDIO_FILE } from './constants.js';
+import { MIN_INTERVAL_SECONDS, MAX_INTERVAL_SECONDS, GONG_DURATION_RULES, MIN_GONG_DURATION, MAX_GONG_DURATION, TESTING_MODE } from './constants.js';
+import { GongSynthesizer } from './audioSynthesizer.js';
 class IntervalGong {
     constructor() {
         this.intervalId = null;
@@ -13,8 +14,8 @@ class IntervalGong {
         this.stopButton = document.getElementById('stopButton');
         this.statusText = document.getElementById('statusText');
         this.nextGongText = document.getElementById('nextGongText');
-        // Create audio element
-        this.audio = new Audio(GONG_AUDIO_FILE);
+        // Create audio synthesizer
+        this.synthesizer = new GongSynthesizer();
         // Set up event listeners
         this.startButton.addEventListener('click', () => this.start());
         this.stopButton.addEventListener('click', () => this.stop());
@@ -48,14 +49,7 @@ class IntervalGong {
     }
     playGong() {
         const gongDuration = this.getGongDuration(this.intervalSeconds);
-        // Reset and play audio
-        this.audio.currentTime = 0;
-        this.audio.play();
-        // Stop audio after specified duration
-        setTimeout(() => {
-            this.audio.pause();
-            this.audio.currentTime = 0;
-        }, gongDuration * 1000);
+        this.synthesizer.playGong(gongDuration);
     }
     updateCountdown() {
         if (!this.isRunning)
@@ -114,9 +108,8 @@ class IntervalGong {
             clearInterval(this.countdownIntervalId);
             this.countdownIntervalId = null;
         }
-        // Stop audio if playing
-        this.audio.pause();
-        this.audio.currentTime = 0;
+        // Note: Web Audio API sounds will naturally fade out based on their envelope
+        // No need to explicitly stop them
         // Unlock inputs
         this.minutesInput.disabled = false;
         this.secondsInput.disabled = false;
@@ -130,5 +123,12 @@ class IntervalGong {
 }
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new IntervalGong();
+    const app = new IntervalGong();
+    // Auto-start in testing mode
+    if (TESTING_MODE) {
+        // Small delay to ensure everything is initialized
+        setTimeout(() => {
+            app.start();
+        }, 100);
+    }
 });
