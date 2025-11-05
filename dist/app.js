@@ -1,4 +1,4 @@
-import { MIN_INTERVAL_SECONDS, MAX_INTERVAL_SECONDS, GONG_DURATION_RULES, MIN_GONG_DURATION, MAX_GONG_DURATION, TESTING_MODE } from './constants.js';
+import { MIN_INTERVAL_SECONDS, MAX_INTERVAL_SECONDS, GONG_DURATION_RULES, MIN_GONG_DURATION, MAX_GONG_DURATION } from './constants.js';
 import { GongSynthesizer } from './audioSynthesizer.js';
 class IntervalGong {
     constructor() {
@@ -97,7 +97,7 @@ class IntervalGong {
         }, 100); // Update 10 times per second for smooth countdown
         this.updateCountdown();
     }
-    stop() {
+    async stop() {
         this.isRunning = false;
         // Clear intervals
         if (this.intervalId !== null) {
@@ -109,7 +109,7 @@ class IntervalGong {
             this.countdownIntervalId = null;
         }
         // Stop any currently playing gong sound
-        this.synthesizer.stopGong();
+        await this.synthesizer.stopGong();
         // Unlock inputs
         this.minutesInput.disabled = false;
         this.secondsInput.disabled = false;
@@ -123,19 +123,5 @@ class IntervalGong {
 }
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new IntervalGong();
-    // Auto-start in testing mode
-    if (TESTING_MODE) {
-        // Small delay to ensure everything is initialized
-        setTimeout(async () => {
-            // Try to resume audio context first (for autoplay)
-            try {
-                await app.synthesizer.ensureAudioContext();
-            }
-            catch (e) {
-                console.log('Audio context needs user interaction');
-            }
-            app.start();
-        }, 100);
-    }
+    new IntervalGong();
 });

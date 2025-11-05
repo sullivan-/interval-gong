@@ -135,7 +135,7 @@ class IntervalGong {
         this.updateCountdown();
     }
 
-    private stop(): void {
+    private async stop(): Promise<void> {
         this.isRunning = false;
 
         // Clear intervals
@@ -150,7 +150,7 @@ class IntervalGong {
         }
 
         // Stop any currently playing gong sound
-        this.synthesizer.stopGong();
+        await this.synthesizer.stopGong();
 
         // Unlock inputs
         this.minutesInput.disabled = false;
@@ -168,19 +168,5 @@ class IntervalGong {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new IntervalGong();
-
-    // Auto-start in testing mode
-    if (TESTING_MODE) {
-        // Small delay to ensure everything is initialized
-        setTimeout(async () => {
-            // Try to resume audio context first (for autoplay)
-            try {
-                await app.synthesizer.ensureAudioContext();
-            } catch (e) {
-                console.log('Audio context needs user interaction');
-            }
-            app.start();
-        }, 100);
-    }
+    new IntervalGong();
 });

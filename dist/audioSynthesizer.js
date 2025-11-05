@@ -1,7 +1,7 @@
-import { GONG_SYNTH_CONFIG } from './constants.js';
 export class GongSynthesizer {
     constructor() {
         this.allGains = [];
+        this.allOscillators = [];
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
     /**
@@ -20,52 +20,69 @@ export class GongSynthesizer {
         // Resume audio context if needed (for autoplay/testing mode)
         await this.ensureAudioContext();
         const now = this.audioContext.currentTime;
-        const { frequencies, baseFrequency, frequencyDecay } = GONG_SYNTH_CONFIG;
-        // Create gain node for overall volume control
+        // Base frequency in Hz (lower = deeper gong)
+        const fundamental = 40;
+        // Define inharmonic partials with individual decay times
+        const partials = [
+            //{ freq: 0.2, amp: 1.5, decay: duration },           // undertone
+            //{ freq: 0.21, amp: 1.5, decay: duration },           // undertone
+            //{ freq: 0.23, amp: 1.5, decay: duration },           // undertone
+            //{ freq: 0.81, amp: 0.8, decay: duration },           // fundamental
+            { freq: 1.0, amp: 1.2, decay: duration }, // fundamental
+            { freq: 2.13, amp: 0.8, decay: duration * 0.8 }, // low inharmonic
+            { freq: 3.41, amp: 0.6, decay: duration * 0.7 },
+            { freq: 4.32, amp: 0.3, decay: duration * 0.58 },
+            //{ freq: 5.21, amp: 0.25, decay: duration * 0.5 },
+            { freq: 6.84, amp: 0.2, decay: duration * 0.38 },
+            //{ freq: 8.17, amp: 0.15, decay: duration * 0.3 },
+            { freq: 10.41, amp: 0.12, decay: duration * 0.25 }, // mid-high
+            //{ freq: 13.14, amp: 0.1, decay: duration * 0.2 },   // high
+            { freq: 16.73, amp: 0.08, decay: duration * 0.15 }, // higher
+            //{ freq: 21.11, amp: 0.06, decay: duration * 0.12 }, // very high
+            //{ freq: 26.47, amp: 0.05, decay: duration * 0.1 },  // shimmer
+            //{ freq: 33.27, amp: 0.04, decay: duration * 0.08 }, // air
+            { freq: 42.71, amp: 0.03, decay: duration * 0.06 }, // brilliance
+        ];
+        // Create master gain node
         const masterGain = this.audioContext.createGain();
         masterGain.connect(this.audioContext.destination);
-        // Track this gain so we can stop it later
+        // Track oscillators for THIS gong
+        const gongOscillators = [];
         this.allGains.push(masterGain);
-        // Create envelope: quick attack, sustained resonance
-        masterGain.gain.setValueAtTime(0, now);
-        masterGain.gain.linearRampToValueAtTime(1, now + 0.01); // Fast attack
-        masterGain.gain.exponentialRampToValueAtTime(0.6, now + duration * 0.2); // Less steep initial decay for more resonance
-        masterGain.gain.exponentialRampToValueAtTime(0.3, now + duration * 0.5); // Sustain longer
-        masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration); // Long tail
-        // Create multiple oscillators for a rich, metallic timbre
-        frequencies.forEach((freqMultiplier, index) => {
-            // Create slightly detuned pairs for fuller, more resonant sound
-            for (let detune = 0; detune < 2; detune++) {
-                const oscillator = this.audioContext.createOscillator();
-                const oscillatorGain = this.audioContext.createGain();
-                // Calculate frequency with slight detuning for richness and beating
-                const frequency = baseFrequency * freqMultiplier;
-                const detuneAmount = detune === 0 ? -2 : 2; // +/- 2 cents
-                oscillator.frequency.setValueAtTime(frequency, now);
-                oscillator.detune.setValueAtTime(detuneAmount, now);
-                // Frequency sweep (gongs drop in pitch slightly)
-                oscillator.frequency.exponentialRampToValueAtTime(frequency * frequencyDecay, now + duration);
-                // Different oscillators have different volumes
-                // Lower frequencies are louder for bigger, fuller sound
-                const isLowFreq = freqMultiplier < 5.0;
-                const isFifth = Math.abs(freqMultiplier - 1.5) < 0.05; // Perfect fifth interval
-                const baseLoudness = index === 0 ? 0.4 :
-                    isFifth ? 0.45 / frequencies.length : // Boost the fifth
-                        (isLowFreq ? 0.35 : 0.25) / frequencies.length;
-                const relativeVolume = baseLoudness / 2; // Divide by 2 since we have pairs
-                oscillatorGain.gain.setValueAtTime(relativeVolume, now);
-                // Use sine waves for a pure metallic tone
-                oscillator.type = 'sine';
-                // Connect: oscillator -> gain -> master gain
-                oscillator.connect(oscillatorGain);
-                oscillatorGain.connect(masterGain);
-                // Play and auto-stop after duration
-                oscillator.start(now);
-                oscillator.stop(now + duration);
-            }
+        // Create each partial with its own envelope and LFO shimmer
+        partials.forEach((partial, i) => {
+            // Main oscillator
+            const osc = this.audioContext.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = fundamental * partial.freq;
+            // Envelope for this partial
+            const gain = this.audioContext.createGain();
+            gain.gain.setValueAtTime(partial.amp, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + partial.decay);
+            // Add shimmer with slow amplitude modulation
+            const lfo = this.audioContext.createOscillator();
+            lfo.frequency.value = 2.5 + i * 0.3; // Different LFO rate per partial
+            const lfoGain = this.audioContext.createGain();
+            lfoGain.gain.value = 0.15; // Subtle modulation
+            lfo.connect(lfoGain);
+            lfoGain.connect(gain.gain);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            // Track oscillators for THIS gong
+            gongOscillators.push(osc);
+            gongOscillators.push(lfo);
+            osc.start(now);
+            lfo.start(now);
+            osc.stop(now + partial.decay);
+            lfo.stop(now + partial.decay);
         });
-        // Add some noise for metallic character
-        this.addMetallicNoise(masterGain, now, duration);
+        // Add these oscillators to the global list
+        this.allOscillators.push(...gongOscillators);
+        // Attack transient - short bright burst
+        this.addAttackTransient(masterGain, now);
+        // Master envelope
+        masterGain.gain.setValueAtTime(0.7, now);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
         // Auto-cleanup after duration
         setTimeout(() => {
             masterGain.disconnect();
@@ -78,44 +95,44 @@ export class GongSynthesizer {
     /**
      * Immediately stops any currently playing gong sound
      */
-    stopGong() {
-        // Disconnect ALL gains immediately - this stops everything
+    async stopGong() {
+        // Disconnect all gains immediately - this kills all sound
         this.allGains.forEach((gain) => {
-            gain.disconnect();
+            try {
+                gain.disconnect();
+            }
+            catch (e) { }
         });
         this.allGains = [];
+        this.allOscillators = [];
     }
     /**
-     * Adds filtered noise for metallic shimmer
+     * Adds attack transient - short bright noise burst for strike
      */
-    addMetallicNoise(destination, startTime, duration) {
-        const { noiseVolume, noiseFilterFrequency } = GONG_SYNTH_CONFIG;
-        // Create noise using a buffer with random values
-        const bufferSize = this.audioContext.sampleRate * duration;
+    addAttackTransient(destination, startTime) {
+        const transientDuration = 0.05; // 50ms burst
+        // Create noise buffer
+        const bufferSize = this.audioContext.sampleRate * transientDuration;
         const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
         const data = buffer.getChannelData(0);
-        // Fill with random noise
         for (let i = 0; i < bufferSize; i++) {
             data[i] = Math.random() * 2 - 1;
         }
-        // Create buffer source
         const noise = this.audioContext.createBufferSource();
         noise.buffer = buffer;
-        // High-pass filter to get only the bright metallic shimmer
+        // Bandpass filter for bright attack
         const filter = this.audioContext.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.setValueAtTime(noiseFilterFrequency, startTime);
-        // Gain for noise
-        const noiseGain = this.audioContext.createGain();
-        noiseGain.gain.setValueAtTime(0, startTime);
-        noiseGain.gain.linearRampToValueAtTime(noiseVolume, startTime + 0.005);
-        noiseGain.gain.exponentialRampToValueAtTime(0.01, startTime + duration * 0.5);
-        // Connect: noise -> filter -> gain -> destination
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, startTime);
+        filter.Q.value = 2;
+        // Quick decay envelope
+        const transientGain = this.audioContext.createGain();
+        transientGain.gain.setValueAtTime(0.3, startTime);
+        transientGain.gain.exponentialRampToValueAtTime(0.001, startTime + transientDuration);
         noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(destination);
-        // Play and auto-stop
+        filter.connect(transientGain);
+        transientGain.connect(destination);
         noise.start(startTime);
-        noise.stop(startTime + duration);
+        noise.stop(startTime + transientDuration);
     }
 }
