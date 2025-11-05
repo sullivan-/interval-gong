@@ -16,7 +16,7 @@ class IntervalGong {
     private statusText: HTMLElement;
     private nextGongText: HTMLElement;
 
-    private synthesizer: GongSynthesizer;
+    public synthesizer: GongSynthesizer;
     private intervalId: number | null = null;
     private isRunning: boolean = false;
     private intervalSeconds: number = 0;
@@ -72,9 +72,9 @@ class IntervalGong {
         return MIN_GONG_DURATION;
     }
 
-    private playGong(): void {
+    private async playGong(): Promise<void> {
         const gongDuration = this.getGongDuration(this.intervalSeconds);
-        this.synthesizer.playGong(gongDuration);
+        await this.synthesizer.playGong(gongDuration);
     }
 
     private updateCountdown(): void {
@@ -149,8 +149,8 @@ class IntervalGong {
             this.countdownIntervalId = null;
         }
 
-        // Note: Web Audio API sounds will naturally fade out based on their envelope
-        // No need to explicitly stop them
+        // Stop any currently playing gong sound
+        this.synthesizer.stopGong();
 
         // Unlock inputs
         this.minutesInput.disabled = false;
@@ -173,7 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto-start in testing mode
     if (TESTING_MODE) {
         // Small delay to ensure everything is initialized
-        setTimeout(() => {
+        setTimeout(async () => {
+            // Try to resume audio context first (for autoplay)
+            try {
+                await app.synthesizer.ensureAudioContext();
+            } catch (e) {
+                console.log('Audio context needs user interaction');
+            }
             app.start();
         }, 100);
     }
