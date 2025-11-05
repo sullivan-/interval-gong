@@ -1,0 +1,12 @@
+{
+  "name": "interval-gong",
+  "version": "1.0.0",
+  "description": "A simple interval timer with gong sounds",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

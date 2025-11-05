@@ -1,0 +1,13 @@
+IMPORTANT: You need to add a gong sound file!
+
+Please add a file named "gong.mp3" to this directory before deploying.
+
+Where to get a gong sound:
+1. Visit https://freesound.org/ and search for "gong"
+2. Filter by Creative Commons 0 license for unrestricted use
+3. Download a gong sound that is at least 3 seconds long
+4. Convert to MP3 format if necessary
+5. Rename it to "gong.mp3"
+6. Place it in this root directory
+
+The app will not work without this file!

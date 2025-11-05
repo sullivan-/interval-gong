@@ -1,0 +1,181 @@
+import {
+    MIN_INTERVAL_SECONDS,
+    MAX_INTERVAL_SECONDS,
+    GONG_DURATION_RULES,
+    MIN_GONG_DURATION,
+    MAX_GONG_DURATION,
+    GONG_AUDIO_FILE
+} from './constants.js';
+
+class IntervalGong {
+    private minutesInput: HTMLInputElement;
+    private secondsInput: HTMLInputElement;
+    private startButton: HTMLButtonElement;
+    private stopButton: HTMLButtonElement;
+    private statusText: HTMLElement;
+    private nextGongText: HTMLElement;
+
+    private audio: HTMLAudioElement;
+    private intervalId: number | null = null;
+    private isRunning: boolean = false;
+    private intervalSeconds: number = 0;
+    private nextGongTime: number = 0;
+    private countdownIntervalId: number | null = null;
+
+    constructor() {
+        // Get DOM elements
+        this.minutesInput = document.getElementById('minutes') as HTMLInputElement;
+        this.secondsInput = document.getElementById('seconds') as HTMLInputElement;
+        this.startButton = document.getElementById('startButton') as HTMLButtonElement;
+        this.stopButton = document.getElementById('stopButton') as HTMLButtonElement;
+        this.statusText = document.getElementById('statusText') as HTMLElement;
+        this.nextGongText = document.getElementById('nextGongText') as HTMLElement;
+
+        // Create audio element
+        this.audio = new Audio(GONG_AUDIO_FILE);
+
+        // Set up event listeners
+        this.startButton.addEventListener('click', () => this.start());
+        this.stopButton.addEventListener('click', () => this.stop());
+
+        // Validate inputs on change
+        this.minutesInput.addEventListener('change', () => this.validateInputs());
+        this.secondsInput.addEventListener('change', () => this.validateInputs());
+    }
+
+    private validateInputs(): void {
+        const minutes = parseInt(this.minutesInput.value) || 0;
+        const seconds = parseInt(this.secondsInput.value) || 0;
+        const totalSeconds = minutes * 60 + seconds;
+
+        if (totalSeconds < MIN_INTERVAL_SECONDS) {
+            this.secondsInput.value = MIN_INTERVAL_SECONDS.toString();
+            this.minutesInput.value = '0';
+        }
+
+        if (totalSeconds > MAX_INTERVAL_SECONDS) {
+            const maxMinutes = Math.floor(MAX_INTERVAL_SECONDS / 60);
+            const maxSeconds = MAX_INTERVAL_SECONDS % 60;
+            this.minutesInput.value = maxMinutes.toString();
+            this.secondsInput.value = maxSeconds.toString();
+        }
+    }
+
+    private getGongDuration(intervalSeconds: number): number {
+        // Find the appropriate gong duration based on interval length
+        for (const rule of GONG_DURATION_RULES) {
+            if (intervalSeconds >= rule.minInterval) {
+                return Math.max(MIN_GONG_DURATION, Math.min(MAX_GONG_DURATION, rule.gongDuration));
+            }
+        }
+        return MIN_GONG_DURATION;
+    }
+
+    private playGong(): void {
+        const gongDuration = this.getGongDuration(this.intervalSeconds);
+
+        // Reset and play audio
+        this.audio.currentTime = 0;
+        this.audio.play();
+
+        // Stop audio after specified duration
+        setTimeout(() => {
+            this.audio.pause();
+            this.audio.currentTime = 0;
+        }, gongDuration * 1000);
+    }
+
+    private updateCountdown(): void {
+        if (!this.isRunning) return;
+
+        const now = Date.now();
+        const remaining = Math.max(0, Math.ceil((this.nextGongTime - now) / 1000));
+
+        if (remaining > 0) {
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            this.nextGongText.textContent = `Next gong in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            this.nextGongText.textContent = 'Gong playing...';
+        }
+    }
+
+    private start(): void {
+        this.validateInputs();
+
+        const minutes = parseInt(this.minutesInput.value) || 0;
+        const seconds = parseInt(this.secondsInput.value) || 0;
+        this.intervalSeconds = minutes * 60 + seconds;
+
+        if (this.intervalSeconds < MIN_INTERVAL_SECONDS || this.intervalSeconds > MAX_INTERVAL_SECONDS) {
+            alert(`Please enter an interval between ${MIN_INTERVAL_SECONDS} second(s) and ${Math.floor(MAX_INTERVAL_SECONDS / 60)} minutes`);
+            return;
+        }
+
+        this.isRunning = true;
+
+        // Lock inputs
+        this.minutesInput.disabled = true;
+        this.secondsInput.disabled = true;
+
+        // Toggle buttons
+        this.startButton.disabled = true;
+        this.stopButton.disabled = false;
+
+        // Update status
+        this.statusText.textContent = 'Running';
+
+        // Play first gong immediately
+        this.playGong();
+        this.nextGongTime = Date.now() + (this.intervalSeconds * 1000);
+
+        // Set up interval for subsequent gongs
+        this.intervalId = window.setInterval(() => {
+            this.playGong();
+            this.nextGongTime = Date.now() + (this.intervalSeconds * 1000);
+        }, this.intervalSeconds * 1000);
+
+        // Set up countdown display
+        this.countdownIntervalId = window.setInterval(() => {
+            this.updateCountdown();
+        }, 100); // Update 10 times per second for smooth countdown
+
+        this.updateCountdown();
+    }
+
+    private stop(): void {
+        this.isRunning = false;
+
+        // Clear intervals
+        if (this.intervalId !== null) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+
+        if (this.countdownIntervalId !== null) {
+            clearInterval(this.countdownIntervalId);
+            this.countdownIntervalId = null;
+        }
+
+        // Stop audio if playing
+        this.audio.pause();
+        this.audio.currentTime = 0;
+
+        // Unlock inputs
+        this.minutesInput.disabled = false;
+        this.secondsInput.disabled = false;
+
+        // Toggle buttons
+        this.startButton.disabled = false;
+        this.stopButton.disabled = true;
+
+        // Update status
+        this.statusText.textContent = 'Ready';
+        this.nextGongText.textContent = '';
+    }
+}
+
+// Initialize app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new IntervalGong();
+});
