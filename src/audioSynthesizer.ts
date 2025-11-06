@@ -2,11 +2,17 @@ import { GONG_SYNTH_CONFIG } from './constants.js';
 
 export class GongSynthesizer {
   private audioContext: AudioContext;
-  private allGains: GainNode[] = [];
+  private masterGain: GainNode;
+  private activeGongGains: GainNode[] = [];
   private allOscillators: OscillatorNode[] = [];
 
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    // Create persistent master gain node
+    this.masterGain = this.audioContext.createGain();
+    this.masterGain.gain.value = 1.0;
+    this.masterGain.connect(this.audioContext.destination);
   }
 
   /**
@@ -53,13 +59,13 @@ export class GongSynthesizer {
       { freq: 42.71, amp: 0.03, decay: duration * 0.06 }, // brilliance
     ];
 
-    // Create master gain node
-    const masterGain = this.audioContext.createGain();
-    masterGain.connect(this.audioContext.destination);
+    // Create gain node for THIS gong
+    const gongGain = this.audioContext.createGain();
+    gongGain.connect(this.masterGain);
 
     // Track oscillators for THIS gong
     const gongOscillators: OscillatorNode[] = [];
-    this.allGains.push(masterGain);
+    this.activeGongGains.push(gongGain);
 
     // Create each partial with its own envelope and LFO shimmer
     partials.forEach((partial, i) => {
@@ -83,7 +89,7 @@ export class GongSynthesizer {
       lfoGain.connect(gain.gain);
 
       osc.connect(gain);
-      gain.connect(masterGain);
+      gain.connect(gongGain);
 
       // Track oscillators for THIS gong
       gongOscillators.push(osc);
@@ -99,18 +105,18 @@ export class GongSynthesizer {
     this.allOscillators.push(...gongOscillators);
 
     // Attack transient - short bright burst
-    this.addAttackTransient(masterGain, now);
+    this.addAttackTransient(gongGain, now);
 
-    // Master envelope
-    masterGain.gain.setValueAtTime(0.7, now);
-    masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    // Gong envelope
+    gongGain.gain.setValueAtTime(0.7, now);
+    gongGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
     // Auto-cleanup after duration
     setTimeout(() => {
-      masterGain.disconnect();
-      const index = this.allGains.indexOf(masterGain);
+      gongGain.disconnect();
+      const index = this.activeGongGains.indexOf(gongGain);
       if (index > -1) {
-        this.allGains.splice(index, 1);
+        this.activeGongGains.splice(index, 1);
       }
     }, duration * 1000 + 100);
   }
@@ -119,13 +125,13 @@ export class GongSynthesizer {
    * Immediately stops any currently playing gong sound
    */
   public async stopGong(): Promise<void> {
-    // Disconnect all gains immediately - this kills all sound
-    this.allGains.forEach((gain) => {
+    // Disconnect all active gong gains - this kills all sound
+    this.activeGongGains.forEach((gain) => {
       try {
         gain.disconnect();
       } catch (e) {}
     });
-    this.allGains = [];
+    this.activeGongGains = [];
     this.allOscillators = [];
   }
 
